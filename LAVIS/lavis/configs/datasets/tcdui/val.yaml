@@ -1,0 +1,48 @@
+datasets:
+  tcdui:
+    build_info:
+      splits:
+        val:
+          dataroot: /home/h_zhou/workspace4/J2/data/DUI_data/TC_DUIdataset
+          mode_config:
+            model: train
+            modality: ['ego', 'sur', 'ins', 'img']
+            length: null
+            frames: 101
+          select_config:
+            mode: select
+            remove_config:
+              record: [
+                      'urban_subjectA_20231101_normal', 'accident_subjectA_20231101_normal',
+                      'urban_subjectA_220231101_drink', 'accident_subjectA_20231101_drink',
+                      'urban_subjectK_20231208_normal', 'accident_subjectK_20231208_normal',
+                      'urban_subjectK_20231208_drink', 'accident_subjectK_20231208_drink',
+                      ] 
+          norm_config:
+            ego:
+              mean: [2.8310e+01, -8.5985e-03,  1.0915e-01,  1.1325e-01, -1.2961e-01, 1.1076e-02]
+              std: [19.7342,  0.0694,  0.1453,  0.2400,  0.4695,  0.0662]
+            sur:
+              mean: [12.2320,  0.8954, -0.0909, 22.9097, 25.0076]
+              std: [30.5015, 10.6426,  0.9205, 20.5338, 19.3309]
+            img:
+              mean: [0.48145466, 0.4578275, 0.40821073]
+              std: [0.26862954, 0.26130258, 0.27577711]
+            ins: null
+          transform_config:
+            pre: null
+            ego: [
+              ['FeatureSelect', {'features': ['speedInKmPerHour', 'appliedSteering', 'appliedThrottle', 'appliedBrake', 'offsetFromLaneCenter', 'rotSpeedInRadsPerSecond Yaw']}],
+              ['ToTensor', {}]
+            ]
+            sur: [
+              ['LengthAlign', {}],
+              ['Shuffle', {}],
+              ['ToTensor', {}]
+            ]
+            img: [
+              ['CenterCrop', {'size': [380, 1140]}],
+              ['Resize', {'size': [224, 672]}],
+              ['ToTensor', {}]
+            ]
+            post: null

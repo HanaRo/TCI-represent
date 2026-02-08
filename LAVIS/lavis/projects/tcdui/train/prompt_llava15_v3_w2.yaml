@@ -1,0 +1,147 @@
+model:
+  arch: tcdui_blip2_vicuna_capablities_v3
+  model_type: vicuna7b
+  modalities: [img, ego, sur, ins]
+  driving_encoder_config: null
+  llm_model: liuhaotian/llava-v1.6-vicuna-7b
+  task_prompt: [
+    "Describe the driving capability demonstrated by the driver in this scene.",
+    "Evaluate the driver's performance based on the scene provided.",
+    "Based on the input data, what can you infer about the driver's driving skill and behavior during this period?",
+    "Given the visual and sensor data, extract indicators of the driver's control quality and risk awareness.",
+    "Summarize the driver-delivered capability using the combined perception from image and sensor data."
+  ]
+  loss_weights:
+    # same record should also be same object
+    record: 0
+    object: 0.25
+    status: 1
+    scene: 0
+    segment: 0.5
+    turn: 0.25
+    tunnel: 0
+
+datasets:
+  tcdui:
+    dataset_type: tcdui_v2
+    build_info:
+      splits:
+        train:
+          data_root: /root/of/the/dataset
+          mode_config:
+            mode: train
+            modality: ['ego', 'sur', 'ins', 'img']
+            length: 10000
+            frames: 100
+          select_config:
+            mode: remove
+            remove_config:
+              subject: ['subjectB', 'subjectD', 'subjectK', 'subjectL']
+              record: [
+                      'urban_subjectA_20260230_normal', 
+                      ] 
+          norm_config:
+            ego:
+              mean: [2.8310e+01, -8.5985e-03,  1.0915e-01,  1.1325e-01, -1.2961e-01, 1.1076e-02]
+              std: [19.7342,  0.0694,  0.1453,  0.2400,  0.4695,  0.0662]
+            sur:
+              mean: [12.2320,  0.8954, -0.0909, 22.9097, 25.0076]
+              std: [30.5015, 10.6426,  0.9205, 20.5338, 19.3309]
+            img:
+              mean: [0.48145466, 0.4578275, 0.40821073]
+              std: [0.26862954, 0.26130258, 0.27577711]
+            ins: null
+          transform_config:
+            pre: null
+            ego: [
+              ['FeatureSelect', {'features': ['speedInKmPerHour', 'appliedSteering', 'appliedThrottle', 'appliedBrake', 'offsetFromLaneCenter', 'rotSpeedInRadsPerSecond Yaw']}],
+              ['ToTensor', {}]
+            ]
+            sur: [
+              ['ToTensor', {}]
+            ]
+            img: [
+              ['CenterCrop', {'size': [380, 1140]}],
+              ['Resize', {'size': [224, 672]}],
+              ['ToTensor', {}]
+            ]
+            ins: null
+            post: null
+        val:
+          data_root: /home/h_zhou/workspace4/J2/data/DUI_data/TC_DUIdataset
+          mode_config:
+            mode: train
+            modality: ['ego', 'sur', 'ins', 'img']
+            length: 1000
+            frames: 100
+          select_config:
+            mode: select
+            select_config:
+              record: [
+                      'urban_subjectA_20231101_normal', 'accident_subjectA_20231101_normal',
+                      'urban_subjectA_220231101_drink', 'accident_subjectA_20231101_drink',
+                      'urban_subjectK_20231208_normal', 'accident_subjectK_20231208_normal',
+                      'urban_subjectK_20231208_drink', 'accident_subjectK_20231208_drink',
+                      ] 
+          norm_config:
+            ego:
+              mean: [2.8310e+01, -8.5985e-03,  1.0915e-01,  1.1325e-01, -1.2961e-01, 1.1076e-02]
+              std: [19.7342,  0.0694,  0.1453,  0.2400,  0.4695,  0.0662]
+            sur:
+              mean: [12.2320,  0.8954, -0.0909, 22.9097, 25.0076]
+              std: [30.5015, 10.6426,  0.9205, 20.5338, 19.3309]
+            img:
+              mean: [0.48145466, 0.4578275, 0.40821073]
+              std: [0.26862954, 0.26130258, 0.27577711]
+            ins: null
+          transform_config:
+            pre: null
+            ego: [
+              ['FeatureSelect', {'features': ['speedInKmPerHour', 'appliedSteering', 'appliedThrottle', 'appliedBrake', 'offsetFromLaneCenter', 'rotSpeedInRadsPerSecond Yaw']}],
+              ['ToTensor', {}]
+            ]
+            sur: [
+              ['ToTensor', {}]
+            ]
+            img: [
+              ['CenterCrop', {'size': [380, 1140]}],
+              ['Resize', {'size': [224, 672]}],
+              ['ToTensor', {}]
+            ]
+            ins: null
+            post: null
+
+run:
+  task: capability_extraction
+  # optimizer
+  lr_sched: "linear_warmup_cosine_lr"
+  init_lr: 4e-5
+  min_lr: 4e-6
+  warmup_lr: 4e-7
+
+  weight_decay: 0.06
+  max_epoch: 500
+  batch_size_train: 16
+  batch_size_eval: 16
+  num_workers: 24
+  warmup_steps: 1000
+
+  seed: 42
+  output_dir: "output/tcdui/"
+
+  amp: True
+  resume_ckpt_path: null
+
+  evaluate: False 
+  train_splits: ["train"]
+  valid_splits: ["val"]
+
+  device: "cuda"
+  # world_size: 8
+  dist_url: "env://"
+  distributed: True
+
+  save_freq: -1
+  val_freq: 1
+
+  find_unused_parameters: True

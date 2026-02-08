@@ -1,0 +1,105 @@
+model:
+  arch: tcdui_blip2_vicuna_capablities_v3
+  model_type: vicuna7b
+  modalities: [img, ego, sur, ins]
+  driving_encoder_config: null
+  llm_model: liuhaotian/llava-v1.6-vicuna-7b
+  output_dim: 8
+  load_finetuned: True
+  finetuned: output/tcudui/llava15_v3_w2_f8_demand/checkpoint_best.pth
+  task_prompt: [
+    "Describe the overall task demand presented by the driving environment in this scene.",
+    "Evaluate the complexity of the current driving task.",
+    "Based on the input data, what are the primary environmental and situational challenges the driver faces during this period?",
+    "Identify the elements in the visual and sensor data that contribute to increased task difficulty for the driver.",
+    "Summarize the situational demands posed by this scene, including traffic, road structure, and potential hazards.",
+    "Given the visual and sensor data, assess how challenging the driving scenario is.",
+    "What factors in this scene increase or decrease the difficulty of driving safely?",
+    "Based on the provided information, estimate the level of attentional and control effort required to navigate this scene.",
+    "Identify specific scene features (e.g., traffic density, road geometry, obstacles) that raise the task demand.",
+    "How does the current traffic and road condition impact the complexity of the driving task?"
+  ]
+  loss_weights:
+    # same record should also be same object
+    record: 0
+    object: 0
+    status: 0
+    scene: 0
+    segment: 0.75
+    turn: 0.25
+    tunnel: 0
+
+datasets:
+  tcdui:
+    dataset_type: tcdui_v2
+    build_info:
+      splits:
+        test:
+          data_root: /home/h_zhou/workspace4/J2/data/DUI_data/TC_DUIdataset
+          mode_config:
+            mode: test
+            modality: ['ego', 'sur', 'ins', 'img']
+            length: null
+            frames: 100
+          select_config: null
+          norm_config:
+            ego:
+              mean: [2.8310e+01, -8.5985e-03,  1.0915e-01,  1.1325e-01, -1.2961e-01, 1.1076e-02]
+              std: [19.7342,  0.0694,  0.1453,  0.2400,  0.4695,  0.0662]
+            sur:
+              mean: [12.2320,  0.8954, -0.0909, 22.9097, 25.0076]
+              std: [30.5015, 10.6426,  0.9205, 20.5338, 19.3309]
+            img:
+              mean: [0.48145466, 0.4578275, 0.40821073]
+              std: [0.26862954, 0.26130258, 0.27577711]
+            ins: null
+          transform_config:
+            pre: null
+            ego: [
+              ['FeatureSelect', {'features': ['speedInKmPerHour', 'appliedSteering', 'appliedThrottle', 'appliedBrake', 'offsetFromLaneCenter', 'rotSpeedInRadsPerSecond Yaw']}],
+              ['ToTensor', {}]
+            ]
+            sur: [
+              ['ToTensor', {}]
+            ]
+            img: [
+              ['CenterCrop', {'size': [380, 1140]}],
+              ['Resize', {'size': [224, 672]}],
+              ['ToTensor', {}]
+            ]
+            ins: null
+            post: null
+
+run:
+  task: tci_infer
+  # optimizer
+  # lr_sched: "linear_warmup_cosine_lr"
+  # init_lr: 4e-5
+  # min_lr: 4e-6
+  # warmup_lr: 4e-7
+
+  # weight_decay: 0.06
+  # max_epoch: 500
+  batch_size_train: 16
+  batch_size_eval: 16
+  num_workers: 16
+  # warmup_steps: 1000
+
+  seed: 42
+  output_dir: "output/tcdui/results"
+
+  amp: True
+  resume_ckpt_path: null
+
+  evaluate: True 
+  test_splits: ["test"]
+
+  device: "cuda"
+  # world_size: 8
+  dist_url: "env://"
+  distributed: True
+
+  # save_freq: -1
+  # val_freq: 1
+
+  find_unused_parameters: True
